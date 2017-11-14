@@ -3,14 +3,16 @@ import numpy as np
 import random
 import tensorflow as tf
 from posenet import GoogLeNet as PoseNet
-import cv2
+#import cv2
+from PIL import Image
 from tqdm import tqdm
 
 
 batch_size = 75
 max_iterations = 30000
 # Set this path to your dataset directory
-directory = 'path_to_datasets/KingsCollege/'
+#directory = 'path_to_datasets/KingsCollege/'
+directory = 'D:/_git/posenet/KingsCollege/'
 dataset = 'dataset_train.txt'
 
 class datasource(object):
@@ -23,11 +25,11 @@ def centeredCrop(img, output_side_length):
 	new_height = output_side_length
 	new_width = output_side_length
 	if height > width:
-		new_height = output_side_length * height / width
+		new_height = output_side_length * height // width
 	else:
-		new_width = output_side_length * width / height
-	height_offset = (new_height - output_side_length) / 2
-	width_offset = (new_width - output_side_length) / 2
+		new_width = output_side_length * width // height
+	height_offset = (new_height - output_side_length) // 2
+	width_offset = (new_width - output_side_length) // 2
 	cropped_img = img[height_offset:height_offset + output_side_length,
 						width_offset:width_offset + output_side_length]
 	return cropped_img
@@ -37,8 +39,10 @@ def preprocess(images):
 	#Resize and crop and compute mean!
 	images_cropped = []
 	for i in tqdm(range(len(images))):
-		X = cv2.imread(images[i])
-		X = cv2.resize(X, (455, 256))
+		#X = cv2.imread(images[i])
+		#X = cv2.resize(X, (455, 256))
+		X = Image.open(images[i])
+		X = np.array(X.resize((455, 256))).astype("uint8")
 		X = centeredCrop(X, 224)
 		images_cropped.append(X)
 	#compute images mean

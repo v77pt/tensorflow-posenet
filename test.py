@@ -4,7 +4,8 @@ import random
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
 from posenet import GoogLeNet as PoseNet
-import cv2
+#import cv2
+from PIL import Image
 from tqdm import tqdm
 import math
 
@@ -12,9 +13,11 @@ batch_size = 75
 max_iterations = 30000
 
 # Set this path to your project directory
-path = 'path_to_project/'
+#path = 'path_to_project/'
+path = 'D:/PythonWorkSpace/posenet/PoseNet_CAU/weights/'
 # Set this path to your dataset directory
-directory = 'path_to_datasets/KingsCollege/'
+#directory = 'path_to_datasets/KingsCollege/'
+directory = 'D:/PythonWorkSpace/posenet/PoseNet_CAU/data/'
 dataset = 'dataset_test.txt'
 
 class datasource(object):
@@ -32,11 +35,13 @@ def centeredCrop(img, output_side_length):
 	new_height = output_side_length
 	new_width = output_side_length
 	if height > width:
-		new_height = output_side_length * height / width
+		new_height = output_side_length * height // width
 	else:
-		new_width = output_side_length * width / height
-	height_offset = (new_height - output_side_length) / 2
-	width_offset = (new_width - output_side_length) / 2
+		new_width = output_side_length * width // height
+	height_offset = (new_height - output_side_length) // 2
+	width_offset = (new_width - output_side_length) // 2
+	#height_offset = int(height_offset)
+	#width_offset = int(width_offset)
 	cropped_img = img[height_offset:height_offset + output_side_length,
 						width_offset:width_offset + output_side_length]
 	return cropped_img
@@ -46,8 +51,10 @@ def preprocess(images):
 	#Resize and crop and compute mean!
 	images_cropped = []
 	for i in tqdm(range(len(images))):
-		X = cv2.imread(images[i])
-		X = cv2.resize(X, (455, 256))
+		#X = cv2.imread(images[i])
+		#X = cv2.resize(X, (455, 256))
+		X = Image.open(images[i])
+		X = np.array(X.resize((455, 256))).astype("uint8")
 		X = centeredCrop(X, 224)
 		images_cropped.append(X)
 	#compute images mean
@@ -124,7 +131,8 @@ def main():
 	p3_x = net.layers['cls3_fc_pose_xyz']
 	p3_q = net.layers['cls3_fc_pose_wpqr']
 
-	init = tf.initialize_all_variables()
+	#init = tf.initialize_all_variables()
+	init = tf.global_variables_initializer()
 	outputFile = "PoseNet.ckpt"
 
 	saver = tf.train.Saver()
@@ -156,10 +164,10 @@ def main():
 			theta = 2 * np.arccos(d) * 180/math.pi
 			error_x = np.linalg.norm(pose_x-predicted_x)
 			results[i,:] = [error_x,theta]
-			print 'Iteration:  ', i, '  Error XYZ (m):  ', error_x, '  Error Q (degrees):  ', theta
+			print ('Iteration:  ', i, '  Error XYZ (m):  ', error_x, '  Error Q (degrees):  ', theta)
 
 	median_result = np.median(results,axis=0)
-	print 'Median error ', median_result[0], 'm  and ', median_result[1], 'degrees.'
+	print ('Median error ', median_result[0], 'm  and ', median_result[1], 'degrees.')
 
 if __name__ == '__main__':
 	main()
